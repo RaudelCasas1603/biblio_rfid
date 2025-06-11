@@ -1,6 +1,6 @@
 export default function Sidebar() {
   return (
-    <div className="fixed top-0 left-0 w-30 h-full bg-gray-800 p-4">
+    <div className="fixed top-0 left-0 w-30 h-full bg-gray-800 p-4 z-10">
       {/* Sidebar component, with icons pending addition  */}
       <div className="flex items-center justify-center">
         <img src="/next.svg" alt="Logo" className=" w-24 h-24" />
