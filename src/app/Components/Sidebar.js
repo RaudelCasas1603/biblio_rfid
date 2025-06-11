@@ -7,13 +7,13 @@ export default function Sidebar() {
       </div>
       <div className="flex flex-col items-center justify-center space-y-10">
         <div className="flex items-center justify-center h-20">
-          <i class="fa-solid fa-house fa-2xl"></i>
+          <i className="fa-solid fa-house fa-2xl"></i>
         </div>
         <div className="flex items-center justify-center h-20">
-          <i class="fa-solid fa-lightbulb fa-2xl"></i>
+          <i className="fa-solid fa-lightbulb fa-2xl"></i>
         </div>
         <div className="flex items-center justify-center h-20">
-          <i class="fa-solid fa-magnifying-glass fa-2xl"></i>
+          <i className="fa-solid fa-magnifying-glass fa-2xl"></i>
         </div>
         <div className="flex items-center justify-center h-20">
           <i className="fa-regular fa-user fa-2xl"></i>

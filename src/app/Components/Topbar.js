@@ -5,8 +5,9 @@ export default function Topbar() {
         <span className="text-3xl font-semibold">Bienvenido </span>
       </div>
       <div className="text-white flex justify-end  w-full  mr-8 space-x-10">
-        <i class="fa-solid fa-calendar-days fa-2xl"></i>
-        <i class="fa-solid fa-ellipsis-vertical fa-2xl"></i>
+        <i className="fa-solid fa-desktop fa-2xl"></i>
+        <i className="fa-solid fa-calendar-days fa-2xl"></i>
+        <i className="fa-solid fa-ellipsis-vertical fa-2xl"></i>
       </div>
     </div>
   );
