@@ -1,4 +1,12 @@
 import Link from "next/link";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faHouse,
+  faLightbulb,
+  faMagnifyingGlass,
+  faCircleInfo,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function Sidebar() {
   return (
@@ -10,27 +18,42 @@ export default function Sidebar() {
       <div className="flex flex-col items-center justify-center space-y-10">
         <div className="flex items-center justify-center h-20 ">
           <Link href="/">
-            <i className="fa-solid fa-house fa-2xl hover:text-blue-300 transition-colors duration-200"></i>
+            <FontAwesomeIcon
+              icon={faHouse}
+              className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+            />
           </Link>
         </div>
         <div className="flex items-center justify-center h-20">
           <Link href="/">
-            <i className="fa-solid fa-lightbulb fa-2xl hover:text-blue-300 transition-colors duration-200"></i>
+            <FontAwesomeIcon
+              icon={faLightbulb}
+              className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+            />
           </Link>
         </div>
         <div className="flex items-center justify-center h-20">
           <Link href="/">
-            <i className="fa-solid fa-magnifying-glass fa-2xl hover:text-blue-300 transition-colors duration-200"></i>
+            <FontAwesomeIcon
+              icon={faMagnifyingGlass}
+              className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+            />
           </Link>
         </div>
         <div className="flex items-center justify-center h-20">
           <Link href="/">
-            <i className="fa-regular fa-user fa-2xl hover:text-blue-300 transition-colors duration-200"></i>
+            <FontAwesomeIcon
+              icon={faUser}
+              className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+            />
           </Link>
         </div>
       </div>
       <div className="flex  items-center justify-center w-full pt-40">
-        <i className="fa-solid fa-circle-info fa-2xl hover:text-blue-300 transition-colors duration-200"></i>
+        <FontAwesomeIcon
+          icon={faCircleInfo}
+          className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+        />
       </div>
     </div>
   );
