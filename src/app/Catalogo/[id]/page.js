@@ -1,9 +1,13 @@
 import Books from "../../data/books";
+import Link from "next/link";
 
 export default async function BookDetails(props) {
   const { id } = await props.params;
 
   const book = Books.find((b) => b.id.toString() === id);
+  const recomendaciones = Books.filter(
+    (b) => b.id !== book.id && b.categoria === book.categoria
+  ).slice(0, 4);
 
   if (!book)
     return (
@@ -71,9 +75,29 @@ export default async function BookDetails(props) {
           </div>
         </div>
       </div>
-      <h1 className="pt-5 font-bold text-3xl text-center text-gray-800 ">
-        Libros que podrian gustarte
-      </h1>
+
+      {recomendaciones.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-4 text-center">
+            Libros que podrían gustarte
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {recomendaciones.map((libro) => (
+              <Link key={libro.id} href={`/Catalogo/${libro.id}`}>
+                <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-xl transition cursor-pointer">
+                  <img
+                    src={libro.imagen}
+                    alt={libro.titulo}
+                    className="h-120 w-full object-cover rounded"
+                  />
+                  <h3 className="text-lg font-semibold mt-3">{libro.titulo}</h3>
+                  <p className="text-sm text-gray-600">{libro.autor}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
