@@ -12,6 +12,8 @@ export default function Biblioteca() {
             titulo={book.titulo}
             autor={book.autor}
             imagen={book.imagen}
+            categoria={book.categoria}
+            copias={book.copias}
           />
         ))}
       </div>

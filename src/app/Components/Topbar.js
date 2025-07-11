@@ -7,9 +7,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export default function Topbar() {
   return (
-    <div className="fixed top-0 left-0 w-full h-22 bg-gray-800 p-4 flex items-center justify-between ">
-      <div className="text-white flex items-center space-x-4 ml-8">
-        <span className="text-3xl font-semibold ml-25 ">Bienvenido </span>
+    <div className="h-20 bg-gray-800 px-6 flex items-center justify-between">
+      <div className="text-white flex items-center space-x-4">
+        <span className="text-3xl font-semibold ">Bienvenido </span>
       </div>
       <div className="text-white flex justify-end  w-full  mr-8 space-x-10">
         <FontAwesomeIcon

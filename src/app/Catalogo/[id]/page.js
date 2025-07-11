@@ -11,7 +11,7 @@ export default async function BookDetails(props) {
     );
 
   return (
-    <div className="pt-20 px-6 bg-gray-50 min-h-screen">
+    <div className="px-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold text-center mb-8 pt-10">
         Detalles del Libro
       </h1>
@@ -38,6 +38,10 @@ export default async function BookDetails(props) {
                 {book.autor}
               </li>
               <li>
+                <span className="font-semibold text-gray-800">Categoria:</span>{" "}
+                {book.categoria}
+              </li>
+              <li>
                 <span className="font-semibold text-gray-800">ISBN:</span>{" "}
                 {book.isbn}
               </li>
@@ -46,6 +50,12 @@ export default async function BookDetails(props) {
                   Fecha de publicación:
                 </span>{" "}
                 {book.fecha_publicacion}
+              </li>
+              <li>
+                <span className="font-semibold text-gray-800">
+                  Copias disponibles:
+                </span>{" "}
+                {book.copias}
               </li>
             </ul>
           </div>
@@ -61,6 +71,9 @@ export default async function BookDetails(props) {
           </div>
         </div>
       </div>
+      <h1 className="pt-5 font-bold text-3xl text-center text-gray-800 ">
+        Libros que podrian gustarte
+      </h1>
     </div>
   );
 }
