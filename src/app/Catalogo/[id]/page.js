@@ -64,13 +64,11 @@ export default async function BookDetails(props) {
             </ul>
           </div>
           <div className="mt-6 flex justify-center">
-            <button className="flex items-center justify-center mt-6 text-2xl font-bold bg-blue-500 text-white  py-3 rounded-lg hover:bg-blue-600 transition w-full max-w-md">
-              <img
-                src="/rfid.webp"
-                alt="NFC Logo"
-                className="w-20 mr-2 rounded"
-              />
-              Solcitar Libro
+            <button className="flex items-center justify-center space-x-4 mt-6 bg-blue-500 py-3 px-6 rounded-lg hover:bg-blue-600 transition w-full max-w-md">
+              <img src="/rfid.webp" alt="NFC Logo" className="w-16 rounded" />
+              <span className="text-2xl font-bold text-white">
+                Solicitar Libro
+              </span>
             </button>
           </div>
         </div>

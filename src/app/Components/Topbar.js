@@ -4,6 +4,7 @@ import {
   faEllipsisVertical,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Link from "next/link";
 
 export default function Topbar() {
   return (
@@ -16,10 +17,12 @@ export default function Topbar() {
           icon={faDesktop}
           className="fa-2xl hover:text-blue-300 transition-colors duration-200"
         />
-        <FontAwesomeIcon
-          icon={faCalendarDays}
-          className="fa-2xl hover:text-blue-300 transition-colors duration-200"
-        />
+        <Link href="/Calendario">
+          <FontAwesomeIcon
+            icon={faCalendarDays}
+            className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+          />
+        </Link>
         <FontAwesomeIcon
           icon={faEllipsisVertical}
           className="fa-2xl hover:text-blue-300 transition-colors duration-200"

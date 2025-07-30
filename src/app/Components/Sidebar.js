@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHouse,
-  faLightbulb,
+  faFireFlameCurved,
   faMagnifyingGlass,
   faCircleInfo,
   faUser,
@@ -13,9 +13,9 @@ export default function Sidebar() {
     <div className="fixed top-0 left-0 w-30 h-full bg-gray-800 p-4 z-10">
       {/* Sidebar component, with icons pending addition  */}
       <div className="flex items-center justify-center">
-        <img src="/logo.webp" alt="Logo" className=" w-18 h-18 mb-10" />
+        <img src="/logo.webp" alt="Logo" className=" w-18 h-22 mb-8" />
       </div>
-      <div className="flex flex-col items-center justify-center space-y-10 mt-4">
+      <div className="flex flex-col items-center justify-center space-y-8 mt-4">
         <div className="flex items-center justify-center h-20 ">
           <Link href="/">
             <FontAwesomeIcon
@@ -27,8 +27,8 @@ export default function Sidebar() {
         <div className="flex items-center justify-center h-20">
           <Link href="/Recomendaciones">
             <FontAwesomeIcon
-              icon={faLightbulb}
-              className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+              icon={faFireFlameCurved}
+              className="fa-2xl hover:text-red-300 transition-colors duration-200"
             />
           </Link>
         </div>
