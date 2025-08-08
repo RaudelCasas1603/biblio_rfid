@@ -15,7 +15,7 @@ export default function Sidebar() {
       <div className="flex items-center justify-center">
         <img src="/logo.webp" alt="Logo" className=" w-18 h-22 mb-8" />
       </div>
-      <div className="flex flex-col items-center justify-center space-y-8 mt-4">
+      <div className="flex flex-col items-center justify-center space-y-8">
         <div className="flex items-center justify-center h-20 ">
           <Link href="/">
             <FontAwesomeIcon
@@ -49,11 +49,11 @@ export default function Sidebar() {
           </Link>
         </div>
       </div>
-      <div className="flex  items-center justify-center w-full pt-40">
+      <div className="flex  items-center justify-center w-full pt-18">
         <Link href="/FAQ">
           <FontAwesomeIcon
             icon={faCircleInfo}
-            className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+            className="fa-2xl mb-10 hover:text-blue-300 transition-colors duration-200"
           />
         </Link>
       </div>

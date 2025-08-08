@@ -2,6 +2,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Sidebar from "./Components/Sidebar";
 import Topbar from "./Components/Topbar";
+import { AuthProvider } from "./context/AuthContext";
 import "./globals.css";
 import "../lib/fontawesome";
 
@@ -38,9 +39,11 @@ export default function RootLayout({ children }) {
             </div>
 
             {/* Contenido scrollable */}
-            <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-              {children}
-            </main>
+            <AuthProvider>
+              <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+                {children}
+              </main>
+            </AuthProvider>
           </div>
         </div>
       </body>

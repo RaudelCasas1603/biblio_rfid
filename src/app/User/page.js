@@ -9,17 +9,13 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import ProtectedRoute from "../Components/ProtectedRoute";
+import { useAuth } from "../context/AuthContext";
 
-export default function User() {
-  const user = {
-    nombre: "Marcella Ordaz",
-    correo: "marcella@example.com",
-    rol: "Administradora",
-    fechaRegistro: "2024-03-14",
-    avatar: "/profile.webp",
-  };
+function PerfilUsuario() {
+  const { usuario, logout } = useAuth();
 
-  const prestamosTotales = 45; // Example total loans
+  const prestamosTotales = 45;
 
   const dataMensual = [
     { mes: "Ene", prestamos: 4 },
@@ -45,31 +41,37 @@ export default function User() {
       {/* Tarjeta de perfil */}
       <div className="bg-white rounded-xl shadow-lg px-8 py-6 max-w-sm w-full text-center">
         <img
-          src={user.avatar}
+          src={usuario?.avatar || "/profile.webp"}
           alt="Avatar"
           className="w-24 h-24 sm:w-28 sm:h-28 rounded-full mx-auto mb-4 shadow-md border-2 border-blue-200"
         />
-        <h2 className="text-xl font-semibold text-gray-800">{user.nombre}</h2>
-        <p className="text-sm text-gray-500">{user.correo}</p>
+        <h2 className="text-xl font-semibold text-gray-800">
+          {usuario?.nombre}
+        </h2>
+        <p className="text-sm text-gray-500">{usuario?.correo}</p>
 
         <div className="text-sm text-gray-700 text-left mt-4 space-y-1">
           <p>
-            <span className="font-semibold">Rol:</span> {user.rol}
+            <span className="font-semibold">Rol:</span> {usuario?.rol}
           </p>
           <p>
-            <span className="font-semibold">Miembro desde:</span>{" "}
-            {new Date(user.fechaRegistro).toLocaleDateString("es-MX")}
+            <span className="font-semibold">Miembro desde:</span> 2024-03-14
           </p>
         </div>
-
-        <button className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full transition shadow-md">
-          Editar perfil
-        </button>
+        <div className="flex space-x-3 justify-center">
+          <button className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full transition shadow-md">
+            Editar perfil
+          </button>
+          <button
+            onClick={logout}
+            className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full transition shadow-md">
+            Cerrar sesión
+          </button>
+        </div>
       </div>
 
       {/* Estadísticas */}
       <div className="w-full max-w-4xl mt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Contador */}
         <div className="bg-white rounded-xl shadow-md p-6 flex flex-col justify-center items-center min-h-[250px] w-full">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">
             Libros prestados
@@ -78,7 +80,6 @@ export default function User() {
           <p className="text-sm text-gray-500">en total</p>
         </div>
 
-        {/* Gráfico */}
         <div className="bg-white rounded-xl shadow-md p-6 min-h-[250px] w-full">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">
             Préstamos mensuales
@@ -100,5 +101,13 @@ export default function User() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function User() {
+  return (
+    <ProtectedRoute>
+      <PerfilUsuario />
+    </ProtectedRoute>
   );
 }

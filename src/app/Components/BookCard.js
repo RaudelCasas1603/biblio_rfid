@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Card({ id, titulo, autor, imagen, categoria, copias }) {
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 max-w-sm border-black-2 border-2">
+    <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm">
       {imagen && (
         <div className="flex justify-center items-center mb-4">
           {" "}

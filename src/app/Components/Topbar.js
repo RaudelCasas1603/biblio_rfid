@@ -23,10 +23,6 @@ export default function Topbar() {
             className="fa-2xl hover:text-blue-300 transition-colors duration-200"
           />
         </Link>
-        <FontAwesomeIcon
-          icon={faEllipsisVertical}
-          className="fa-2xl hover:text-blue-300 transition-colors duration-200"
-        />
       </div>
     </div>
   );

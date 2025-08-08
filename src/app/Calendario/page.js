@@ -5,12 +5,13 @@ import {
   createViewMonthGrid,
   createViewMonthAgenda,
 } from "@schedule-x/calendar";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createEventsServicePlugin } from "@schedule-x/events-service";
 import "@schedule-x/theme-default/dist/index.css";
 import Countdown from "../Components/Countdown";
+import ProtectedRoute from "../Components/ProtectedRoute"; // ✅ importa esto
 
-function CalendarApp() {
+function CalendarAppContent() {
   const eventsService = useState(() => createEventsServicePlugin())[0];
 
   const events = [
@@ -61,15 +62,13 @@ function CalendarApp() {
     <div className="max-w-5xl mx-auto px-4 py-6">
       <h1 className="font-bold text-3xl text-center mb-4">Libros Activos</h1>
 
-      {/* Calendario */}
       <div className="bg-white rounded-lg shadow-md p-4 h-[500px] overflow-y-auto">
         <ScheduleXCalendar calendarApp={calendar} />
       </div>
 
-      {/* Lista de cuentas regresivas */}
       <div className="mt-6 space-y-3">
         <h2 className="text-2xl font-semibold mb-4 text-center">
-          Libros en prestamo activos
+          Libros en préstamo activos
         </h2>
         {events.map((event) => (
           <div
@@ -84,4 +83,10 @@ function CalendarApp() {
   );
 }
 
-export default CalendarApp;
+export default function CalendarApp() {
+  return (
+    <ProtectedRoute>
+      <CalendarAppContent />
+    </ProtectedRoute>
+  );
+}
