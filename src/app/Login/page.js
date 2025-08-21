@@ -7,6 +7,8 @@ import { useAuth } from "../context/AuthContext";
 import { faEnvelope, faKey } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+import Swal from "sweetalert2";
+
 export default function LoginPage() {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
@@ -18,10 +20,34 @@ export default function LoginPage() {
 
     if (correo === "admin@admin.com" && password === "admin") {
       login({ nombre: "Admin", correo, rol: "admin", autenticado: true });
-      router.push("/Admin");
-    } else {
+
+      Swal.fire({
+        icon: "success",
+        title: "Bienvenido Admin",
+        text: "Has iniciado sesión correctamente",
+        timer: 2000,
+        showConfirmButton: false,
+      }).then(() => {
+        router.push("/Admin");
+      });
+    } else if (correo && password) {
       login({ nombre: "Usuario", correo, rol: "usuario", autenticado: true });
-      router.push("/");
+
+      Swal.fire({
+        icon: "success",
+        title: "Bienvenido",
+        text: "Inicio de sesión exitoso",
+        timer: 2000,
+        showConfirmButton: true,
+      }).then(() => {
+        router.push("/");
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Correo o contraseña incorrectos",
+      });
     }
   };
 

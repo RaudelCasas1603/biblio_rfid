@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 
 import { faEnvelope, faKey, faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Swal from "sweetalert2";
 
 export default function SignUpPage() {
   const [nombre, setNombre] = useState("");
@@ -15,8 +16,27 @@ export default function SignUpPage() {
 
   const handleSignUp = (e) => {
     e.preventDefault();
+
+    if (!nombre || !correo || !password) {
+      Swal.fire({
+        icon: "warning",
+        title: "Campos vacíos",
+        text: "Por favor, completa todos los campos",
+      });
+      return;
+    }
+
     login({ nombre, correo, rol: "usuario", autenticado: true });
-    router.push("/");
+
+    Swal.fire({
+      icon: "success",
+      title: "Registro exitoso",
+      text: "Tu cuenta ha sido creada correctamente",
+      timer: 2000,
+      showConfirmButton: false,
+    }).then(() => {
+      router.push("/");
+    });
   };
 
   return (
