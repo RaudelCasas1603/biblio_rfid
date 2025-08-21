@@ -1,7 +1,7 @@
 import {
   faDesktop,
   faCalendarDays,
-  faEllipsisVertical,
+  faSquarePlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
@@ -13,10 +13,18 @@ export default function Topbar() {
         <span className="text-3xl font-semibold ">Bienvenido </span>
       </div>
       <div className="text-white flex justify-end  w-full  mr-8 space-x-10">
-        <FontAwesomeIcon
-          icon={faDesktop}
-          className="fa-2xl hover:text-blue-300 transition-colors duration-200"
-        />
+        <Link href="/LiberarLibro">
+          <FontAwesomeIcon
+            icon={faSquarePlus}
+            className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+          />
+        </Link>
+        <Link href="/Admin">
+          <FontAwesomeIcon
+            icon={faDesktop}
+            className="fa-2xl hover:text-blue-300 transition-colors duration-200"
+          />
+        </Link>
         <Link href="/Calendario">
           <FontAwesomeIcon
             icon={faCalendarDays}

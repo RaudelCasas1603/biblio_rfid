@@ -32,7 +32,7 @@ export default async function BookDetails(props) {
         </div>
         {/* Texto */}
         <div>
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 h-80 max-w-150 ">
+          <div className="bg-white  rounded-xl shadow-lg p-6 border border-gray-200 h-80 max-w-150 ">
             <h1 className="text-4xl font-bold text-gray-900 mb-6 border-b pb-2">
               {book.titulo}
             </h1>
@@ -62,14 +62,6 @@ export default async function BookDetails(props) {
                 {book.copias}
               </li>
             </ul>
-          </div>
-          <div className="mt-6 flex justify-center">
-            <button className="flex items-center justify-center space-x-4 mt-6 bg-blue-500 py-3 px-6 rounded-lg hover:bg-blue-600 transition w-full max-w-md">
-              <img src="/rfid.webp" alt="NFC Logo" className="w-16 rounded" />
-              <span className="text-2xl font-bold text-white">
-                Solicitar Libro
-              </span>
-            </button>
           </div>
         </div>
       </div>
