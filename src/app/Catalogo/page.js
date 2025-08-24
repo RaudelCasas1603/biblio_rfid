@@ -1,16 +1,17 @@
 "use client";
+
+import { useState } from "react";
 import Card from "../Components/BookCard";
 import GenreCard from "../Components/GenreCard";
-import Books from "../data/books";
 import genres from "../data/genres";
-import { useState } from "react";
 
-export default function Biblioteca() {
+export default function Biblioteca({ initialData }) {
+  const [data] = useState(initialData);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
 
   const librosFiltrados = categoriaSeleccionada
-    ? Books.filter((book) => book.categoria === categoriaSeleccionada)
-    : Books;
+    ? data.filter((book) => book.genero[0] === categoriaSeleccionada)
+    : data;
 
   const manejarSeleccion = (categoria) => {
     setCategoriaSeleccionada((prev) => (prev === categoria ? null : categoria));
@@ -31,15 +32,15 @@ export default function Biblioteca() {
       </div>
 
       <div className="grid grid-cols-4 gap-4 mx-2 mt-4">
-        {librosFiltrados.map((book) => (
+        {librosFiltrados.map((libro) => (
           <Card
-            key={book.id}
-            id={book.id}
-            titulo={book.titulo}
-            autor={book.autor}
-            imagen={book.imagen}
-            categoria={book.categoria}
-            copias={book.copias}
+            key={libro.pk_id_libro}
+            id={libro.pk_id_libro}
+            titulo={libro.titulo}
+            autor={libro.autor}
+            imagen={libro.ruta_img}
+            categoria={libro.genero[0]}
+            copias={libro.copias}
           />
         ))}
       </div>
