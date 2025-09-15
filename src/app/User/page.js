@@ -10,7 +10,6 @@ export default function User() {
   const [generosLeidos, setGenerosLeidos] = useState([]);
   const [prestamosTotales, setPrestamosTotales] = useState([]);
 
-  
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,11 +27,11 @@ export default function User() {
         } else {
           console.error("Error fetching data:", res1.status);
         }
-        
+
         if (res2.ok) {
           const data = await res2.json();
           setHistorialPrestamos(data);
-          console.log("Fetched data:", data); 
+          console.log("Fetched data:", data);
         } else {
           console.error("Error fetching data:", res2.status);
         }
@@ -40,7 +39,7 @@ export default function User() {
         if (res3.ok) {
           const data = await res3.json();
           setGenerosLeidos(data);
-          console.log("Fetched data:", data); 
+          console.log("Fetched data:", data);
         } else {
           console.error("Error fetching data:", res3.status);
         }
@@ -48,11 +47,10 @@ export default function User() {
         if (res4.ok) {
           const data = await res4.json();
           setPrestamosTotales(data);
-          console.log("Fetched data:", data); 
+          console.log("Fetched data:", data);
         } else {
           console.error("Error fetching data:", res4.status);
         }
-
       } catch (err) {
         console.error("Fetch error:", err);
       } finally {
@@ -67,8 +65,12 @@ export default function User() {
 
   return (
     <ProtectedRoute>
-      <PerfilUsuario dataMensual={dataMensual} historialPrestamos={historialPrestamos} 
-                     generosLeidos={generosLeidos} prestamosTotales={prestamosTotales}/>
+      <PerfilUsuario
+        dataMensual={dataMensual}
+        historialPrestamos={historialPrestamos}
+        generosLeidos={generosLeidos}
+        prestamosTotales={prestamosTotales}
+      />
     </ProtectedRoute>
   );
 }

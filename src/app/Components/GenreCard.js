@@ -7,7 +7,7 @@ export default function GenreCard({ name, icon, onClick, activo }) {
       className={`flex text-xl font-semibold items-center space-x-2 p-3 rounded-xl hover:bg-blue-500 border transition-colors-duration-700 ${
         activo ? "bg-blue-500 text-white" : "bg-white text-gray-800"
       }`}>
-      <img src={icon}  className="w-auto rounded-lg" />
+      <img src={icon} className="w-auto rounded-lg bg-black" />
       <h2>{name}</h2>
     </button>
   );

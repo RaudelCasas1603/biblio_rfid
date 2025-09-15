@@ -9,6 +9,7 @@ import {
   faArrowUpRightDots,
   faArrowDown,
 } from "@fortawesome/free-solid-svg-icons";
+import HistorialPrestamos from "./HistorialPrestamos";
 
 function MetricCard({ title, value, delta, up = true, icon }) {
   return (
@@ -48,28 +49,11 @@ function MiniBar({ data }) {
   );
 }
 
-export default function AdminDashboard({statistics}) {
+export default function AdminDashboard({ statistics }) {
   const { usuario } = useAuth();
   const metrics = statistics.Metricas;
   const topLibros = statistics.TopLibros;
-  const seriePrestamos7d = statistics.SeriePrestamos
-
-  // Datos demo (luego cámbialos por fetch a la API)
-  /**
-  const metrics = {
-    Usuarios: { total: 128, delta: "+6 esta semana", up: true },
-    Libros: { total: 542, delta: "+12 este mes", up: true },
-    PrestamosHoy: { total: 18, delta: "-3 vs ayer", up: false },
-  };
-
-  const topLibros = [
-    { titulo: "Cien años de soledad", prestamos: 124 },
-    { titulo: "Pedro Páramo", prestamos: 98 },
-    { titulo: "El laberinto de la soledad", prestamos: 75 },
-  ];
-
-  const seriePrestamos7d = [12, 9, 15, 14, 21, 19, 18]; // últimos 7 días
- */
+  const seriePrestamos7d = statistics.SeriePrestamos;
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col p-6 md:p-10">
@@ -197,6 +181,7 @@ export default function AdminDashboard({statistics}) {
           </ul>
         </div>
       </section>
+      <HistorialPrestamos />
     </div>
   );
 }

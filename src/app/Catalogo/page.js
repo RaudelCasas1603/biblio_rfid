@@ -4,6 +4,7 @@ import { useState } from "react";
 import Card from "../Components/BookCard";
 import GenreCard from "../Components/GenreCard";
 import SearchBar from "../Components/SearchBar";
+import ChatPopup from "../Components/ChatPopup";
 
 export default function Biblioteca({ books_list, gnres_list }) {
   const [books] = useState(books_list);
@@ -14,7 +15,7 @@ export default function Biblioteca({ books_list, gnres_list }) {
 
   // Genre + search filter
   const librosFiltrados = books.filter((book) => {
-  const term = searchTerm.toLowerCase();
+    const term = searchTerm.toLowerCase();
 
     const matchesSearch =
       book.titulo.toLowerCase().includes(term) ||
@@ -24,9 +25,9 @@ export default function Biblioteca({ books_list, gnres_list }) {
         : String(book.genero).toLowerCase().includes(term));
 
     const matchesGenre = categoriaSeleccionada
-      ? (Array.isArray(book.genero)
-          ? book.genero.includes(categoriaSeleccionada)
-          : book.genero === categoriaSeleccionada)
+      ? Array.isArray(book.genero)
+        ? book.genero.includes(categoriaSeleccionada)
+        : book.genero === categoriaSeleccionada
       : true;
 
     return matchesSearch && matchesGenre;
@@ -58,7 +59,7 @@ export default function Biblioteca({ books_list, gnres_list }) {
           />
         ))}
       </div>
-      
+
       {/* Search bar */}
       <div className="flex justify-center items-center mt-6">
         <SearchBar onSearch={setSearchTerm} />
@@ -83,6 +84,7 @@ export default function Biblioteca({ books_list, gnres_list }) {
             No se encontraron libros con ese término o género.
           </p>
         )}
+        <ChatPopup />
       </div>
     </>
   );
