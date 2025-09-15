@@ -7,7 +7,12 @@ export default function LiberarLibro() {
   const [mensaje, setMensaje] = useState("Listo para liberar.");
   const [libro, setLibro] = useState(null);
 
-  // Catálogo ficticio para simular el mapeo de un tag NFC -> libro
+  // Campos de verificación
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Catálogo ficticio
   const catalogoSimulado = useMemo(
     () =>
       new Map([
@@ -49,6 +54,9 @@ export default function LiberarLibro() {
 
   async function manejarLiberacion() {
     setLibro(null);
+    setAuthChecked(false);
+    setEmail("");
+    setPassword("");
     setStatus("waiting");
     setMensaje('Pulsa "Escanear y liberar" y acerca el libro al sensor NFC...');
   }
@@ -57,7 +65,6 @@ export default function LiberarLibro() {
     setStatus("scanning");
     setMensaje("Escaneando... acerca el libro al sensor NFC");
 
-    // Intentamos leer NFC usando la API del navegador
     try {
       if (typeof window !== "undefined" && "NDEFReader" in window) {
         const ndef = new window.NDEFReader();
@@ -71,43 +78,18 @@ export default function LiberarLibro() {
             reject(new Error("NFC read error"));
           };
           ndef.onreading = (event) => {
-            try {
-              let tagId = "";
-              for (const record of event.message.records) {
-                if (record.recordType === "text") {
-                  const textDecoder = new TextDecoder(
-                    record.encoding || "utf-8"
-                  );
-                  tagId = textDecoder.decode(record.data);
-                  break;
-                }
-                if (record.recordType === "url") {
-                  const textDecoder = new TextDecoder("utf-8");
-                  tagId = textDecoder.decode(record.data);
-                  break;
-                }
-              }
-
-              if (!tagId) {
-                tagId = event.serialNumber || "TAG-003";
-              }
-
-              procesarTag(tagId);
-              resolve();
-            } catch (e) {
-              setStatus("error");
-              setMensaje("Ocurrió un error al procesar la etiqueta.");
-              reject(e);
-            }
+            let tagId = event.serialNumber || "TAG-003";
+            procesarTag(tagId);
+            resolve();
           };
         });
-        return; // Si llegamos aquí, ya procesamos
+        return;
       }
     } catch (e) {
-      // Ignoramos y usamos simulación abajo
+      // fallback
     }
 
-    // Simulación (fallback): elegimos un TAG al azar tras un pequeño delay
+    // Simulación
     await new Promise((r) => setTimeout(r, 1200));
     const tags = Array.from(catalogoSimulado.keys());
     const random = tags[Math.floor(Math.random() * tags.length)];
@@ -123,14 +105,35 @@ export default function LiberarLibro() {
       isbn: base.isbn,
     });
     setStatus("success");
-    setMensaje("Libro identificado. Puedes proceder a liberar.");
+    setMensaje("Libro identificado. Ingrese sus credenciales para liberar.");
+  }
+
+  function verificarCredenciales() {
+    // Simulación: en producción, se haría fetch al backend
+    if (email === "demo@correo.com" && password === "123456") {
+      setAuthChecked(true);
+      setMensaje("Usuario verificado. Puede confirmar la liberación.");
+    } else {
+      setAuthChecked(false);
+      setMensaje("Credenciales incorrectas. Intente de nuevo.");
+    }
   }
 
   function confirmarLiberacion() {
-    if (!libro) return;
-    // Aquí iría la llamada real a tu backend para registrar la liberación
-    // fetch('/api/liberar', { method: 'POST', body: JSON.stringify({ tag: libro.id }) })
+    if (!libro || !authChecked) return;
+
+    // Aquí iría la llamada real al backend
     setMensaje(`Libro "${libro.titulo}" liberado correctamente.`);
+
+    //  Limpiar memoria después de unos segundos
+    setTimeout(() => {
+      setLibro(null);
+      setEmail("");
+      setPassword("");
+      setAuthChecked(false);
+      setStatus("idle");
+      setMensaje("Listo para liberar.");
+    }, 2000);
   }
 
   return (
@@ -139,12 +142,11 @@ export default function LiberarLibro() {
         <header className="mb-6 text-center">
           <h1 className="text-3xl font-bold">Liberar Libro</h1>
           <p className="text-gray-600 mt-2">
-            Presiona <span className="font-semibold">Escanear y liberar</span> y
-            acerca el libro al sensor NFC.
+            Escanea el libro con NFC y valida tus credenciales.
           </p>
         </header>
 
-        {/* Estado / Mensajes */}
+        {/* Estado */}
         <div
           className={`mb-4 rounded-lg border p-3 text-sm ${
             status === "error"
@@ -158,24 +160,43 @@ export default function LiberarLibro() {
           {mensaje}
         </div>
 
-        {/* Tarjeta de libro identificado */}
+        {/* Tarjeta del libro */}
         {libro && (
           <div className="mb-4 rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">{libro.titulo}</h2>
-                <p className="text-gray-600">{libro.autor}</p>
-                <p className="text-gray-500 text-sm">ISBN: {libro.isbn}</p>
-                <p className="text-gray-400 text-xs mt-1">Tag: {libro.id}</p>
-              </div>
-              <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                Identificado
-              </span>
-            </div>
+            <h2 className="text-xl font-semibold">{libro.titulo}</h2>
+            <p className="text-gray-600">{libro.autor}</p>
+            <p className="text-gray-500 text-sm">ISBN: {libro.isbn}</p>
+            <p className="text-gray-400 text-xs mt-1">Tag: {libro.id}</p>
           </div>
         )}
 
-        {/* Botones de acción */}
+        {/* Formulario de verificación */}
+        {libro && !authChecked && (
+          <div className="mb-4 border rounded-xl p-4 bg-gray-50">
+            <h3 className="font-semibold mb-2">Verificación de usuario</h3>
+            <input
+              type="email"
+              placeholder="Correo electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full mb-2 px-3 py-2 border rounded-md"
+            />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full mb-3 px-3 py-2 border rounded-md"
+            />
+            <button
+              onClick={verificarCredenciales}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+              Verificar
+            </button>
+          </div>
+        )}
+
+        {/* Botones */}
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={manejarLiberacion}
@@ -187,25 +208,25 @@ export default function LiberarLibro() {
             onClick={escanearNFC}
             disabled={status === "scanning"}
             className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60">
-            {status === "scanning" ? "Escaneando..." : "Escanear y liberar"}
+            {status === "scanning" ? "Escaneando..." : "Escanear NFC"}
           </button>
 
           <button
             onClick={confirmarLiberacion}
-            disabled={!libro}
+            disabled={!libro || !authChecked}
             className="w-full sm:w-auto px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60">
             Confirmar liberación
           </button>
         </div>
 
-        {/* Enlaces */}
+        {/* Link */}
         <div className="mt-6 text-center">
           <Link href="/Catalogo" className="text-blue-600 hover:underline">
             Volver al Catálogo
           </Link>
         </div>
 
-        {/* Indicador visual cuando escanea */}
+        {/* Indicador visual */}
         {status === "scanning" && (
           <div className="mt-6 flex items-center justify-center">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
