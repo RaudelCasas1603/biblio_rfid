@@ -1,6 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import Swal from "sweetalert2";
 
 export default function LiberarLibro() {
   const [status, setStatus] = useState("idle"); // idle | waiting | scanning | success | error
@@ -118,22 +119,26 @@ export default function LiberarLibro() {
       setMensaje("Credenciales incorrectas. Intente de nuevo.");
     }
   }
-
   function confirmarLiberacion() {
     if (!libro || !authChecked) return;
 
-    // Aquí iría la llamada real al backend
-    setMensaje(`Libro "${libro.titulo}" liberado correctamente.`);
-
-    //  Limpiar memoria después de unos segundos
-    setTimeout(() => {
+    Swal.fire({
+      title: "¡Liberación exitosa!",
+      text: `El libro "${libro.titulo}" fue liberado correctamente.`,
+      icon: "success",
+      confirmButtonColor: "#3085d6",
+      confirmButtonText: "OK",
+      timer: 2000,
+      timerProgressBar: true,
+    }).then(() => {
+      // Limpiar memoria después de cerrar alerta
       setLibro(null);
       setEmail("");
       setPassword("");
       setAuthChecked(false);
       setStatus("idle");
       setMensaje("Listo para liberar.");
-    }, 2000);
+    });
   }
 
   return (
@@ -221,7 +226,7 @@ export default function LiberarLibro() {
 
         {/* Link */}
         <div className="mt-6 text-center">
-          <Link href="/Catalogo" className="text-blue-600 hover:underline">
+          <Link href="/" className="text-blue-600 hover:underline">
             Volver al Catálogo
           </Link>
         </div>
