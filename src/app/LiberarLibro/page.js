@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Swal from "sweetalert2";
 
@@ -12,52 +12,14 @@ export default function LiberarLibro() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authChecked, setAuthChecked] = useState(false);
-
-  // Catálogo ficticio
-  const catalogoSimulado = useMemo(
-    () =>
-      new Map([
-        [
-          "TAG-001",
-          {
-            titulo: "Cien años de soledad",
-            autor: "Gabriel García Márquez",
-            isbn: "978-0307474728",
-          },
-        ],
-        [
-          "TAG-002",
-          {
-            titulo: "El laberinto de la soledad",
-            autor: "Octavio Paz",
-            isbn: "978-9684115885",
-          },
-        ],
-        [
-          "TAG-003",
-          {
-            titulo: "Pedro Páramo",
-            autor: "Juan Rulfo",
-            isbn: "978-6070728798",
-          },
-        ],
-        [
-          "TAG-004",
-          {
-            titulo: "La sombra del viento",
-            autor: "Carlos Ruiz Zafón",
-            isbn: "978-8408172177",
-          },
-        ],
-      ]),
-    []
-  );
+  const [userId, setUserId] = useState(null); // id del usuario validado
 
   async function manejarLiberacion() {
     setLibro(null);
     setAuthChecked(false);
     setEmail("");
     setPassword("");
+    setUserId(null);
     setStatus("waiting");
     setMensaje('Pulsa "Escanear y liberar" y acerca el libro al sensor NFC...');
   }
@@ -79,7 +41,7 @@ export default function LiberarLibro() {
             reject(new Error("NFC read error"));
           };
           ndef.onreading = (event) => {
-            let tagId = event.serialNumber || "TAG-003";
+            let tagId = event.serialNumber || "0000000001";
             procesarTag(tagId);
             resolve();
           };
@@ -87,40 +49,150 @@ export default function LiberarLibro() {
         return;
       }
     } catch (e) {
-      // fallback
+      // fallback de simulación
     }
 
-    // Simulación
+    // Simulación si no hay NFC
     await new Promise((r) => setTimeout(r, 1200));
-    const tags = Array.from(catalogoSimulado.keys());
-    const random = tags[Math.floor(Math.random() * tags.length)];
-    procesarTag(random);
+    procesarTag("0000000001");
   }
 
-  function procesarTag(tagId) {
-    const base = catalogoSimulado.get(tagId) || catalogoSimulado.get("TAG-002");
-    setLibro({
-      id: tagId,
-      titulo: base.titulo,
-      autor: base.autor,
-      isbn: base.isbn,
-    });
-    setStatus("success");
-    setMensaje("Libro identificado. Ingrese sus credenciales para liberar.");
-  }
+  async function procesarTag(tagId) {
+    try {
+      const res = await fetch(`http://localhost:1880/get_book_rfid`);
+      if (!res.ok) throw new Error("Error al consultar el backend");
 
-  function verificarCredenciales() {
-    // Simulación: en producción, se haría fetch al backend
-    if (email === "demo@correo.com" && password === "123456") {
-      setAuthChecked(true);
-      setMensaje("Usuario verificado. Puede confirmar la liberación.");
-    } else {
-      setAuthChecked(false);
-      setMensaje("Credenciales incorrectas. Intente de nuevo.");
+      const data = await res.json();
+
+      if(data.disponibilidad){
+          setLibro({
+          id: data.id,
+          pk_id_copia: data.pk_id_copia,
+          rfid_tag: data.rfid_tag,
+          disponibilidad: data.disponibilidad,
+          titulo: data.titulo,
+          autor: data.autor,
+          isbn: data.isbn,
+        });
+        setStatus("success");
+        setMensaje("Libro identificado. Ingrese sus credenciales para liberar.");
+      }else{
+        setStatus("error");
+        setMensaje("Libro identificado pero no disponible para su prestamo, consulte al bibliotecario.");
+      }
+
+      
+    } catch (error) {
+      console.error(error);
+      setStatus("error");
+      setMensaje("No se pudo obtener la información del libro.");
     }
   }
-  function confirmarLiberacion() {
-    if (!libro || !authChecked) return;
+
+  async function verificarCredenciales() {
+    if (!email || !password) {
+      setMensaje("Ingrese correo y contraseña.");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `/api/usuario/validation?email=${encodeURIComponent(
+          email
+        )}&password=${encodeURIComponent(password)}`
+      );
+
+      if (!res.ok) {
+        throw new Error("Error en la petición");
+      }
+
+      const data = await res.json();
+      console.log("Respuesta validación:", data);
+
+      if (data.verified === true) {
+        setAuthChecked(true);
+        setUserId(data.id); // guardamos id del usuario autenticado
+        setMensaje("Usuario verificado. Puede confirmar la liberación.");
+      } else {
+        setAuthChecked(false);
+        setUserId(null);
+        setMensaje("Credenciales incorrectas. Intente de nuevo.");
+      }
+    } catch (error) {
+      console.error(error);
+      setAuthChecked(false);
+      setUserId(null);
+      setMensaje("Error al validar el usuario.");
+    }
+  }
+
+  // 🔧 helper para quitar la Z de ISOString
+  function toIsoNoZ(date) {
+    return date.toISOString().replace("Z", "");
+  }
+
+async function confirmarLiberacion() {
+  if (!libro || !authChecked || !userId) return;
+
+  try {
+    // id 
+    const res_last_prestamo = await fetch(`/api/prestamo/ultimo_prestamo_id/`);
+    if (!res_last_prestamo.ok) throw new Error("Error al consultar el backend");
+
+    const data_last_prestamo = await res_last_prestamo.json();
+    // asegúrate de convertir a número
+    const nuevoIdPrestamo = Number(data_last_prestamo) + 1;
+    
+    // fechas
+    const fechaPrestamo = new Date();
+    const fechaEntrega = new Date();
+    fechaEntrega.setMonth(fechaPrestamo.getMonth() + 1);
+
+    // diferencia en días
+    const diffMs = fechaEntrega - fechaPrestamo;
+    const diasRestantes = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    // payload con el formato correcto
+    const prestamoPayload = {
+      id: "",
+      pk_id_prestamo: nuevoIdPrestamo, 
+      fk_id_copia: libro.id, 
+      fk_id_usuario: userId, 
+      fecha_prestamo: fechaPrestamo.toISOString(),
+      fecha_entrega: fechaEntrega.toISOString(),
+      dias_restantes: diasRestantes,
+      estatus_entrega: false, 
+      created_at: fechaPrestamo.toISOString(),
+      updated_at: fechaPrestamo.toISOString(),
+    };
+
+    console.log("Enviando payload:", prestamoPayload);
+
+    const res = await fetch("/api/prestamo/create/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(prestamoPayload),
+    });
+
+    if (!res.ok) throw new Error("Error en creación de préstamo");
+
+    const data = await res.json();
+    console.log("Respuesta API:", data);
+
+    // enviar actualizacion de libro
+    const res_update_libro_copy = await fetch(`/api/copia_libro/actualizar_estatus_usuario/${libro.pk_id_copia}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      }
+    });
+
+    if (!res_update_libro_copy.ok) throw new Error("Error en creación de préstamo");
+
+    const data_update_libro_copy = await res_update_libro_copy.json();
+    console.log("Respuesta API:", data_update_libro_copy);
 
     Swal.fire({
       title: "¡Liberación exitosa!",
@@ -131,15 +203,26 @@ export default function LiberarLibro() {
       timer: 2000,
       timerProgressBar: true,
     }).then(() => {
-      // Limpiar memoria después de cerrar alerta
       setLibro(null);
       setEmail("");
       setPassword("");
       setAuthChecked(false);
+      setUserId(null);
       setStatus("idle");
       setMensaje("Listo para liberar.");
     });
+  } catch (error) {
+    console.error("Error creando préstamo:", error);
+    Swal.fire({
+      title: "Error",
+      text: "No se pudo registrar el préstamo.",
+      icon: "error",
+      confirmButtonColor: "#d33",
+    });
   }
+}
+
+ 
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -171,7 +254,7 @@ export default function LiberarLibro() {
             <h2 className="text-xl font-semibold">{libro.titulo}</h2>
             <p className="text-gray-600">{libro.autor}</p>
             <p className="text-gray-500 text-sm">ISBN: {libro.isbn}</p>
-            <p className="text-gray-400 text-xs mt-1">Tag: {libro.id}</p>
+            <p className="text-gray-400 text-xs mt-1">Tag: {libro.rfid_tag}</p>
           </div>
         )}
 
@@ -231,7 +314,6 @@ export default function LiberarLibro() {
           </Link>
         </div>
 
-        {/* Indicador visual */}
         {status === "scanning" && (
           <div className="mt-6 flex items-center justify-center">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />

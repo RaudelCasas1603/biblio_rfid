@@ -1,6 +1,5 @@
-// app/Admin/Users/page.jsx
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -16,54 +15,57 @@ import {
 
 export default function AdminUsers() {
   const [query, setQuery] = useState("");
-
-  // Datos de ejemplo (puedes iniciar con [] si gustas)
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      nombre: "Admin",
-      correo: "admin@admin.com",
-      rol: "admin",
-      estado: "activo",
-      avatar: "/profile.webp",
-    },
-    {
-      id: 2,
-      nombre: "María López",
-      correo: "maria@example.com",
-      rol: "usuario",
-      estado: "activo",
-      avatar: "/profile.webp",
-    },
-    {
-      id: 3,
-      nombre: "Juan Pérez",
-      correo: "juan@example.com",
-      rol: "usuario",
-      estado: "bloqueado",
-      avatar: "",
-    },
-  ]);
+  const [users, setUsers] = useState([]);
+  const [tiposUsuario, setTiposUsuario] = useState([]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     nombre: "",
     correo: "",
-    rol: "usuario",
+    rol: "", // ahora se guarda el id real de tipo usuario
     estado: "activo",
     avatar: "",
     password: "",
+    passwordConfirm: "", // confirmación de la contraseña
   });
+
+  // 🔄 Cargar tipos de usuario al montar
+  useEffect(() => {
+    async function fetchTipos() {
+      try {
+        const res = await fetch("/api/tipo_usuario/all/");
+        if (!res.ok) throw new Error("Error al cargar roles");
+        const data = await res.json();
+        setTiposUsuario(data);
+      } catch (err) {
+        console.error("Error cargando tipos de usuario:", err);
+      }
+    }
+
+    async function fetchUsuarios() {
+      try {
+        const res = await fetch("/api/usuario/all/");
+        if (!res.ok) throw new Error("Error al cargar usuarios");
+        const data = await res.json();
+        setUsers(data);
+      } catch (err) {
+        console.error("Error cargando usuarios:", err);
+      }
+    }
+
+    fetchTipos();
+    fetchUsuarios();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return users;
     return users.filter(
       (u) =>
-        u.nombre.toLowerCase().includes(q) ||
-        u.correo.toLowerCase().includes(q) ||
-        u.rol.toLowerCase().includes(q) ||
+        u.nombre_usuario.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.fk_id_tipo_usuario.toLowerCase().includes(q) ||
         u.estado.toLowerCase().includes(q)
     );
   }, [users, query]);
@@ -73,17 +75,26 @@ export default function AdminUsers() {
     setForm({
       nombre: "",
       correo: "",
-      rol: "usuario",
+      rol: tiposUsuario.length > 0 ? tiposUsuario[0].id : "",
       estado: "activo",
       avatar: "",
       password: "",
+      passwordConfirm: "", // Asegurando que el campo esté vacío al crear
     });
     setModalOpen(true);
   };
 
   const openEdit = (user) => {
     setEditing(user);
-    setForm({ ...user, password: "" }); // no mostramos/guardamos password actual
+    setForm({
+      nombre: user.nombre_usuario,
+      correo: user.email,
+      rol: user.fk_id_tipo_usuario,
+      estado: user.estado,
+      avatar: user.avatar || "",
+      password: "", // No prellenar la contraseña
+      passwordConfirm: "", // No prellenar la confirmación de la contraseña
+    });
     setModalOpen(true);
   };
 
@@ -91,29 +102,42 @@ export default function AdminUsers() {
     const res = await Swal.fire({
       icon: "warning",
       title: "Eliminar usuario",
-      text: `¿Seguro que deseas eliminar a "${user.nombre}"?`,
+      text: `¿Seguro que deseas eliminar a "${user.nombre_usuario}"?`,
       showCancelButton: true,
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
     });
     if (res.isConfirmed) {
-      setUsers((prev) => prev.filter((u) => u.id !== user.id));
-      Swal.fire({
-        icon: "success",
-        title: "Eliminado",
-        timer: 1400,
-        showConfirmButton: false,
-      });
+      try {
+        const deleteRes = await fetch(`/api/usuario/delete/${user.pk_id_usuario}`, {
+          method: "DELETE",
+        });
+        if (!deleteRes.ok) throw new Error("Error al eliminar usuario");
+
+        setUsers((prev) => prev.filter((u) => u.id !== user.id));
+        Swal.fire({
+          icon: "success",
+          title: "Eliminado",
+          timer: 1400,
+          showConfirmButton: false,
+        });
+      } catch (err) {
+        console.error("Error al eliminar usuario:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo eliminar el usuario",
+        });
+      }
     }
   };
 
-  // Bloquear/activar rápido desde tabla
   const toggleEstado = async (user) => {
     const nuevoEstado = user.estado === "activo" ? "bloqueado" : "activo";
     const res = await Swal.fire({
       icon: "question",
       title: `Cambiar estado`,
-      text: `¿Deseas cambiar el estado de ${user.nombre} a "${nuevoEstado}"?`,
+      text: `¿Deseas cambiar el estado de ${user.nombre_usuario} a "${nuevoEstado}"?`,
       showCancelButton: true,
       confirmButtonText: "Sí, cambiar",
       cancelButtonText: "Cancelar",
@@ -134,81 +158,161 @@ export default function AdminUsers() {
   const emailValido = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!form.nombre || !form.correo) {
-      Swal.fire({
-        icon: "warning",
-        title: "Campos requeridos",
-        text: "Nombre y correo son obligatorios",
-      });
-      return;
-    }
-    if (!emailValido(form.correo)) {
-      Swal.fire({
-        icon: "error",
-        title: "Correo no válido",
-        text: "Verifica el formato del correo",
-      });
-      return;
-    }
-    if (!editing && !form.password) {
+  // Validaciones antes de enviar
+  if (!form.nombre || !form.correo) {
+    Swal.fire({
+      icon: "warning",
+      title: "Campos requeridos",
+      text: "Nombre y correo son obligatorios",
+    });
+    return;
+  }
+  if (!emailValido(form.correo)) {
+    Swal.fire({
+      icon: "error",
+      title: "Correo no válido",
+      text: "Verifica el formato del correo",
+    });
+    return;
+  }
+
+  // Validación de la contraseña
+  if (!editing) {
+    if (!form.password || form.password.length < 8) {
       Swal.fire({
         icon: "warning",
         title: "Contraseña requerida",
-        text: "Para crear un usuario nuevo, especifica una contraseña",
+        text: "La contraseña debe tener al menos 8 caracteres",
       });
       return;
     }
+    if (form.password !== form.passwordConfirm) {
+      Swal.fire({
+        icon: "error",
+        title: "Contraseñas no coinciden",
+        text: "La contraseña y su confirmación deben coincidir",
+      });
+      return;
+    }
+  }
 
-    if (editing) {
-      // Actualizar
+  if (editing) {
+    // Código para actualizar el usuario
+    const updatedUser = {
+      id: editing.id,  // Asegúrate de tener este campo
+      pk_id_usuario: editing.pk_id_usuario, // Asegúrate de que esto esté en el objeto `editing`
+      nombre_usuario: form.nombre,
+      password: form.password || editing.password, // Mantener la contraseña anterior si no se cambia
+      passwordConfirm: form.passwordConfirm || form.password, // Confirmación de la nueva contraseña
+      verified: true,
+      email: form.correo,
+      fk_id_tipo_usuario: form.rol, // ID del tipo de usuario
+      created_at: editing.created_at, // Fecha de creación
+      updated_at: "", // Fecha de actualización
+    };
+
+    try {
+      const res = await fetch("/api/usuario/update/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser), // Convertir a JSON
+      });
+
+      if (!res.ok) throw new Error("Error al actualizar el usuario");
+
+      const data = await res.json();
+      console.log("Usuario actualizado en backend:", data);
+
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === editing.id
-            ? {
-                ...editing,
-                nombre: form.nombre,
-                correo: form.correo,
-                rol: form.rol,
-                estado: form.estado,
-                avatar: form.avatar,
-              }
-            : u
+          u.id === editing.id ? { ...data, estado: form.estado } : u
         )
       );
+
       Swal.fire({
         icon: "success",
         title: "Usuario actualizado",
         timer: 1400,
         showConfirmButton: false,
       });
-    } else {
-      // Crear
-      const nuevo = {
-        id: Math.max(0, ...users.map((u) => u.id)) + 1,
-        nombre: form.nombre,
-        correo: form.correo,
-        rol: form.rol,
-        estado: form.estado,
-        avatar: form.avatar || "",
-        // Nota: en demo, no guardamos password; en producción, envíala al backend
+    } catch (err) {
+      console.error("Error al actualizar usuario:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo actualizar el usuario en el servidor",
+      });
+    }
+  } else {
+    // Código para crear usuario, si no se está editando.
+    try {
+      // 🚀 obtener el último id de usuario
+      const res_last = await fetch("/api/usuario/ultimo_usuario_id");
+      if (!res_last.ok) throw new Error("Error al consultar último usuario id");
+      const lastId = await res_last.json();
+      const nuevoId = Number(lastId) + 1; // Sumar 1 al último ID
+
+      const now = new Date().toISOString();
+
+      // 🚀 Crear usuario en API con el formato correcto
+      const nuevoUsuario = {
+        id: "",  // Deja en blanco, ya que el backend puede generar uno
+        pk_id_usuario: nuevoId, // Asignamos el nuevo ID sumado
+        nombre_usuario: form.nombre,
+        password: form.password,
+        passwordConfirm: form.passwordConfirm,
+        verified: true,
+        email: form.correo,
+        fk_id_tipo_usuario: form.rol, // ID del tipo de usuario
+        created_at: now,  // Fecha actual
+        updated_at: "", // Deja vacío, el backend asignará la fecha
       };
-      setUsers((prev) => [nuevo, ...prev]);
+
+      const res = await fetch("/api/usuario/create/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevoUsuario), // Convertir el objeto a JSON
+      });
+
+      if (!res.ok) throw new Error("Error al crear usuario");
+
+      const data = await res.json();
+      console.log("Usuario creado en backend:", data);
+
+      // Agregar el nuevo usuario a la lista local
+      setUsers((prev) => [
+        {
+          ...data, // Datos devueltos por la API
+        },
+        ...prev,
+      ]);
+
       Swal.fire({
         icon: "success",
         title: "Usuario creado",
         timer: 1400,
         showConfirmButton: false,
       });
+    } catch (err) {
+      console.error("Error al crear usuario:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo crear el usuario en el servidor",
+      });
     }
-    setModalOpen(false);
-  };
+  }
+
+  setModalOpen(false);
+};
+
 
   const badgeRol = (rol) => (
     <span
       className={`px-2 py-1 rounded-full text-xs font-semibold ${
-        rol === "admin"
+        rol === "Administrador"
           ? "bg-purple-100 text-purple-700"
           : "bg-blue-100 text-blue-700"
       }`}>
@@ -242,10 +346,6 @@ export default function AdminUsers() {
             Nuevo usuario
           </button>
         </div>
-
-        <p className="text-gray-600 mb-4">
-          Aquí puedes ver, editar o eliminar usuarios registrados.
-        </p>
 
         {/* Search */}
         <div className="mb-4">
@@ -293,21 +393,16 @@ export default function AdminUsers() {
                 {filtered.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      {u.avatar ? (
-                        <img
-                          src={u.avatar}
-                          alt={u.nombre}
-                          className="h-10 w-10 rounded-full object-cover border"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-gray-200 border flex items-center justify-center text-gray-500">
-                          <FontAwesomeIcon icon={faUser} />
-                        </div>
-                      )}
+                      {/* Avatar predeterminado */}
+                      <div className="h-10 w-10 rounded-full bg-gray-200 border flex items-center justify-center text-gray-500">
+                        <FontAwesomeIcon icon={faUser} />
+                      </div>
                     </td>
-                    <td className="px-4 py-3">{u.nombre}</td>
-                    <td className="px-4 py-3">{u.correo}</td>
-                    <td className="px-4 py-3">{badgeRol(u.rol)}</td>
+                    <td className="px-4 py-3">{u.nombre_usuario}</td>
+                    <td className="px-4 py-3">{u.email}</td>
+                    <td className="px-4 py-3">
+                      {badgeRol(tiposUsuario.find((t) => t.id === u.fk_id_tipo_usuario)?.rol || "Desconocido")}
+                    </td>
                     <td className="px-4 py-3">{badgeEstado(u.estado)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
@@ -376,23 +471,16 @@ export default function AdminUsers() {
                   required
                 />
 
-                {/* Avatar */}
-                <FieldImage
-                  label="Avatar"
-                  value={form.avatar}
-                  onChange={(v) => setForm((f) => ({ ...f, avatar: v }))}
-                />
-
-                {/* Rol */}
+                {/* Rol dinámico */}
                 <FieldSelect
                   icon={faShieldHalved}
                   label="Rol"
                   value={form.rol}
                   onChange={(v) => setForm((f) => ({ ...f, rol: v }))}
-                  options={[
-                    { value: "usuario", label: "usuario" },
-                    { value: "admin", label: "admin" },
-                  ]}
+                  options={tiposUsuario.map((t) => ({
+                    value: t.id,
+                    label: t.rol,
+                  }))}
                 />
 
                 {/* Estado */}
@@ -407,7 +495,7 @@ export default function AdminUsers() {
                   ]}
                 />
 
-                {/* Password (solo al crear; al editar es opcional/oculto según prefieras) */}
+                {/* Password */}
                 {!editing && (
                   <Field
                     icon={faShieldHalved}
@@ -415,7 +503,39 @@ export default function AdminUsers() {
                     type="password"
                     value={form.password}
                     onChange={(v) => setForm((f) => ({ ...f, password: v }))}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                  />
+                )}
+                {editing && (
+                  <Field
+                    icon={faShieldHalved}
+                    label="Contraseña nueva"
+                    type="password"
+                    value={form.password}
+                    onChange={(v) => setForm((f) => ({ ...f, password: v }))}
+                    placeholder="Dejar vacío si no quieres cambiarla"
+                  />
+                )}
+                {editing && (
+                  <Field
+                    icon={faShieldHalved}
+                    label="Confirmar nueva contraseña"
+                    type="password"
+                    value={form.passwordConfirm}
+                    onChange={(v) => setForm((f) => ({ ...f, passwordConfirm: v }))}
+                    placeholder="Confirmar nueva contraseña"
+                    required={editing}
+                  />
+                )}
+                {!editing && (
+                  <Field
+                    icon={faShieldHalved}
+                    label="Confirmar Contraseña"
+                    type="password"
+                    value={form.passwordConfirm}
+                    onChange={(v) => setForm((f) => ({ ...f, passwordConfirm: v }))}
+                    placeholder="Confirma tu contraseña"
                     required
                   />
                 )}
@@ -442,16 +562,8 @@ export default function AdminUsers() {
   );
 }
 
-/** ---------- Componentes auxiliares ---------- */
-function Field({
-  label,
-  icon,
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  required,
-}) {
+/* ---------- Componentes auxiliares ---------- */
+function Field({ label, icon, type = "text", value, onChange, placeholder, required }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -495,70 +607,6 @@ function FieldSelect({ label, icon, value, onChange, options }) {
           ))}
         </select>
       </div>
-    </div>
-  );
-}
-
-/**
- * Campo de imagen con vista previa (Base64 en memoria)
- */
-function FieldImage({ label, value, onChange }) {
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      Swal.fire({
-        icon: "error",
-        title: "Formato no válido",
-        text: "Solo imágenes JPEG, PNG o WEBP.",
-      });
-      return;
-    }
-    const maxMB = 2;
-    if (file.size > maxMB * 1024 * 1024) {
-      Swal.fire({
-        icon: "warning",
-        title: "Archivo muy grande",
-        text: `La imagen debe pesar menos de ${maxMB} MB.`,
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => onChange(reader.result); // Base64
-    reader.readAsDataURL(file);
-  };
-
-  const clearImage = () => onChange("");
-
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFile}
-        className="w-full border rounded-lg px-3 py-2"
-      />
-      {value && (
-        <div className="mt-2 flex items-center gap-3">
-          <img
-            src={value}
-            alt="Avatar"
-            className="h-16 w-16 rounded-full object-cover border"
-          />
-          <button
-            type="button"
-            onClick={clearImage}
-            className="px-3 py-2 rounded-lg border hover:bg-gray-50">
-            Quitar imagen
-          </button>
-        </div>
-      )}
     </div>
   );
 }
