@@ -10,7 +10,7 @@ import {
   faArrowDown,
 } from "@fortawesome/free-solid-svg-icons";
 import HistorialPrestamos from "./HistorialPrestamos";
-
+import RecibirLibro from "./RecibirLibro";
 function MetricCard({ title, value, delta, up = true, icon }) {
   return (
     <div className="bg-white rounded-xl shadow p-5 flex items-center gap-4">
@@ -91,6 +91,8 @@ export default function AdminDashboard({ statistics }) {
           icon={faChartLine}
         />
       </section>
+
+      <RecibirLibro />
 
       {/* Tarjetas de navegación */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
