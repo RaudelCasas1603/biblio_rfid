@@ -182,7 +182,7 @@ async function confirmarLiberacion() {
     console.log("Respuesta API:", data);
 
     // enviar actualizacion de libro
-    const res_update_libro_copy = await fetch(`/api/copia_libro/actualizar_estatus_usuario/${libro.pk_id_copia}`, {
+    const res_update_libro_copy = await fetch(`/api/copia_libro/stat_copia_libro_prestado/${libro.pk_id_copia}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
