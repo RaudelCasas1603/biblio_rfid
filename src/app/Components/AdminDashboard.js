@@ -132,6 +132,24 @@ export default function AdminDashboard({ statistics }) {
           </div>
         </Link>
 
+        <Link href="/Admin/AdCopias" className="group">
+          <div className="flex flex-col items-center bg-gray-800 shadow-md rounded-xl p-6 group-hover:bg-gray-700 transition duration-200 h-full">
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Gestión de Copias - Libros
+            </h2>
+            <div className="bg-white w-36 h-36 rounded-full flex items-center justify-center shadow-md my-4">
+              <img
+                src="/icons/books.webp"
+                alt="books Icon"
+                className="w-28 h-28"
+              />
+            </div>
+            <p className="text-white/90 text-center">
+              Agregar, editar o eliminar Copias de Libros.
+            </p>
+          </div>
+        </Link>
+
         <Link href="/Admin/Estadisticas" className="group">
           <div className="flex flex-col items-center bg-gray-800 shadow-md rounded-xl p-6 group-hover:bg-gray-700 transition duration-200 h-full">
             <h2 className="text-xl font-semibold text-white mb-2">

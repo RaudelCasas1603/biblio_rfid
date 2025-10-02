@@ -8,35 +8,18 @@ import {
   faTrash,
   faMagnifyingGlass,
   faBook,
-  faBarcode,
-  faUser,
-  faCalendar,
   faTag,
+  faBarcode,
+  faQrcode,
+  faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 
-// Field, FieldSelect, FieldImage componentes siguen siendo los mismos
-
-
-/**
- * Campo de imagen con vista previa (Base64 en memoria)
- * Para demo/local está perfecto. En producción,
- * sube el archivo a un bucket (Cloudinary/S3/Firebase) y guarda la URL.
- */
-// Componente para los campos de entrada de texto (como Título, Autor, etc.)
-function Field({
-  label,
-  icon,
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  required,
-}) {
+// ---- COMPONENTES REUTILIZABLES ----
+function Field({ label, icon, type = "text", value, onChange, placeholder, required }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-        {required && " *"}
+        {label}{required && " *"}
       </label>
       <div className="relative">
         <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -54,285 +37,167 @@ function Field({
   );
 }
 
-// Componente para los campos de selección (como Departamento, Género, etc.)
-function FieldSelect({ label, icon, value, onChange, options }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      <div className="relative">
-        <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-          <FontAwesomeIcon icon={icon} className="text-gray-400" />
-        </span>
-        <select
-          className="w-full border rounded-lg px-3 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  );
-}
-
-// Componente para cargar y mostrar imágenes (como la portada del libro)
-function FieldImage({ label, value, onChange }) {
-  const handleFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validaciones básicas
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!validTypes.includes(file.type)) {
-      Swal.fire({
-        icon: "error",
-        title: "Formato no válido",
-        text: "Solo se aceptan imágenes JPEG, PNG o WEBP.",
-      });
-      return;
-    }
-    const maxMB = 2;
-    if (file.size > maxMB * 1024 * 1024) {
-      Swal.fire({
-        icon: "warning",
-        title: "Archivo muy grande",
-        text: `La imagen debe pesar menos de ${maxMB} MB.`,
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => onChange(reader.result); // Base64
-    reader.readAsDataURL(file);
-  };
-
-  const clearImage = () => onChange("");
-
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleFile}
-        className="w-full border rounded-lg px-3 py-2"
-      />
-
-      {value && (
-        <div className="mt-2 flex items-center gap-3">
-          <img
-            src={value}
-            alt="Vista previa"
-            className="h-32 w-24 object-cover rounded-md border"
-          />
-          <button
-            type="button"
-            onClick={clearImage}
-            className="px-3 py-2 rounded-lg border hover:bg-gray-50"
-          >
-            Quitar imagen
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-export default function AdminBooks() {
+// ---- COMPONENTE PRINCIPAL ----
+export default function AdminCopias() {
   const [query, setQuery] = useState("");
-  const [books, setBooks] = useState([]);
-  const [tiposGenero, setTiposGenero] = useState([]);
-  const [departamentos, setDepartamentos] = useState([]);
-
+  const [copias, setCopias] = useState([]);
+  const [libros, setLibros] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null); // libro en edición o null
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    titulo: "",
-    autor: "",
+    fk_id_libro: "",
     isbn: "",
-    anio: "",
-    estado: "disponible",
-    imagen: "",
-    copias: 0,
-    fk_id_departamento: "", // Deberemos llenar con la opción seleccionada
-    fk_id_genero: "", // Deberemos llenar con la opción seleccionada
+    rfid_tag: "",
+    disponibilidad: true,
   });
 
-  // 🔄 Cargar libros, géneros y departamentos al montar
+  // 🔄 Cargar copias y libros
   useEffect(() => {
     async function fetchData() {
       try {
-        const resLibros = await fetch("/api/libro/get/all");
-        const librosData = await resLibros.json();
-        setBooks(librosData);
+        const resCopias = await fetch("/api/copia_libro/get_all_copies/");
+        const dataCopias = await resCopias.json();
+        setCopias(dataCopias || []);
 
-        const resDepartamentos = await fetch("/api/departamento");
-        const departamentosData = await resDepartamentos.json();
-        setDepartamentos(departamentosData);
-
-        const resGeneros = await fetch("/api/generos");
-        const generosData = await resGeneros.json();
-        setTiposGenero(generosData);
+        const resLibros = await fetch("/api/libro/get_all/");
+        const dataLibros = await resLibros.json();
+        setLibros(dataLibros || []);
       } catch (err) {
-        console.error("Error al cargar los datos:", err);
+        console.error("Error cargando datos:", err);
       }
     }
-
     fetchData();
   }, []);
 
+  // 🔎 Filtro de búsqueda
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
-    if (!q) return books;
-    return books.filter(
-      (b) =>
-        b.titulo.toLowerCase().includes(q) ||
-        b.autor.toLowerCase().includes(q) ||
-        b.isbn.toLowerCase().includes(q) ||
-        String(b.anio).includes(q) ||
-        b.estado.toLowerCase().includes(q)
-    );
-  }, [books, query]);
+    if (!q) return copias;
+    return copias.filter((c) => {
+      const autor = c.libro?.autor?.toLowerCase() || "";
+      const titulo = c.libro?.titulo?.toLowerCase() || "";
+      const isbn = c.isbn?.toLowerCase() || "";
+      const rfid = c.rfid_tag?.toLowerCase() || "";
+      return autor.includes(q) || titulo.includes(q) || isbn.includes(q) || rfid.includes(q);
+    });
+  }, [copias, query]);
 
+  // 🆕 Crear
   const openCreate = () => {
     setEditing(null);
     setForm({
-      titulo: "",
-      autor: "",
+      fk_id_libro: libros.length > 0 ? libros[0].id : "",
       isbn: "",
-      anio: "",
-      estado: "disponible",
-      imagen: "",
-      copias: 0,
-      fk_id_departamento: departamentos.length > 0 ? departamentos[0].id : "",
-      fk_id_genero: tiposGenero.length > 0 ? tiposGenero[0].id : "",
+      rfid_tag: "",
+      disponibilidad: true,
     });
     setModalOpen(true);
   };
 
-  const openEdit = (book) => {
-    setEditing(book);
-    setForm({ ...book, anio: book.anio || "", copias: book.copias || 0 });
+  // ✏️ Editar
+  const openEdit = (copia) => {
+    setEditing(copia);
+    setForm({
+      fk_id_libro: copia.fk_id_libro,
+      isbn: copia.isbn,
+      rfid_tag: copia.rfid_tag,
+      disponibilidad: copia.disponibilidad,
+    });
     setModalOpen(true);
   };
 
-  const handleDelete = async (book) => {
+  // ❌ Eliminar
+  const handleDelete = async (copia) => {
     const res = await Swal.fire({
       icon: "warning",
-      title: "Eliminar libro",
-      text: `¿Seguro que deseas eliminar "${book.titulo}"?`,
+      title: "Eliminar copia",
+      text: `¿Seguro que deseas eliminar la copia de "${copia.libro.titulo}"?`,
       showCancelButton: true,
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
     });
-    if (res.isConfirmed) {
-      setBooks((prev) => prev.filter((b) => b.id !== book.id));
-      Swal.fire({
-        icon: "success",
-        title: "Eliminado",
-        timer: 1400,
-        showConfirmButton: false,
-      });
+    if (!res.isConfirmed) return;
+    try {
+      const response = await fetch(`/api/copia_libro/delete/${copia.pk_id_copia}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Error al eliminar copia");
+      Swal.fire({ icon: "success", title: "Eliminada", timer: 1400, showConfirmButton: false })
+        .then(() => window.location.reload());
+    } catch (err) {
+      console.error(err);
+      Swal.fire({ icon: "error", title: "Error", text: "No se pudo eliminar la copia" });
     }
   };
 
-  // Función para obtener el último ID de libro y sumarle 1
+  // Obtener nuevo ID copia
   const obtenerNuevoId = async () => {
     try {
-      const res = await fetch("/api/libro/ultimo_libro_id/");
+      const res = await fetch("/api/copia_libro/ultimo_id_copia/");
       const lastId = await res.json();
       return lastId + 1;
     } catch (err) {
-      console.error("Error al obtener último ID de libro:", err);
+      console.error("Error obteniendo último id copia:", err);
     }
   };
 
+  // Guardar (CREATE / UPDATE)
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!form.titulo || !form.autor || !form.isbn) {
-      Swal.fire({
-        icon: "warning",
-        title: "Campos requeridos",
-        text: "Título, Autor e ISBN son obligatorios",
-      });
+    if (!form.isbn || !form.rfid_tag) {
+      Swal.fire({ icon: "warning", title: "Campos requeridos", text: "ISBN y RFID son obligatorios" });
       return;
     }
 
-    // Validar si el año es un número
-    if (isNaN(form.anio)) {
-      Swal.fire({
-        icon: "error",
-        title: "Año no válido",
-        text: "El año debe ser un número válido",
-      });
-      return;
-    }
-
-    // Si estamos editando un libro
     if (editing) {
-      setBooks((prev) =>
-        prev.map((b) =>
-          b.id === editing.id ? { ...editing, ...form } : b
-        )
-      );
-      Swal.fire({
-        icon: "success",
-        title: "Libro actualizado",
-        timer: 1400,
-        showConfirmButton: false,
-      });
+      const copiaEditada = {
+        id: editing.id,
+        pk_id_copia: editing.pk_id_copia,
+        fk_id_libro: form.fk_id_libro,
+        isbn: form.isbn,
+        rfid_tag: form.rfid_tag,
+        disponibilidad: form.disponibilidad,
+        created_at: editing.created_at,
+        updated_at: new Date().toISOString(),
+      };
+      try {
+        const res = await fetch("/api/copia_libro/update/", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(copiaEditada),
+        });
+        if (!res.ok) throw new Error();
+        await res.json();
+        Swal.fire({ icon: "success", title: "Copia actualizada", timer: 1400, showConfirmButton: false })
+          .then(() => window.location.reload());
+      } catch {
+        Swal.fire({ icon: "error", title: "Error", text: "No se pudo actualizar la copia" });
+      }
     } else {
-      // Obtener nuevo id de libro
       const nuevoId = await obtenerNuevoId();
-
-      const nuevoLibro = {
-        id: "", // Este campo lo maneja el backend
-        pk_id_libro: nuevoId,
-        ...form,
-        fecha_publicacion: new Date().toISOString(),
+      const nuevaCopia = {
+        id: "",
+        pk_id_copia: nuevoId,
+        fk_id_libro: form.fk_id_libro,
+        isbn: form.isbn,
+        rfid_tag: form.rfid_tag,
+        disponibilidad: form.disponibilidad,
         created_at: "",
         updated_at: "",
       };
-
-      // Hacer el POST a la API
+      console.log(JSON.stringify(nuevaCopia))
       try {
-        const res = await fetch("/api/libro/create/", {
+        const res = await fetch("/api/copia_libro/create/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(nuevoLibro),
+          body: JSON.stringify(nuevaCopia),
         });
-
-        if (!res.ok) throw new Error("Error al crear libro");
-
-        const data = await res.json();
-        setBooks((prev) => [data, ...prev]);
-
-        Swal.fire({
-          icon: "success",
-          title: "Libro agregado",
-          timer: 1400,
-          showConfirmButton: false,
-        });
-      } catch (err) {
-        console.error("Error al crear libro:", err);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudo agregar el libro",
-        });
+        if (!res.ok) throw new Error();
+        await res.json();
+        Swal.fire({ icon: "success", title: "Copia agregada", timer: 1400, showConfirmButton: false })
+          .then(() => window.location.reload());
+      } catch {
+        Swal.fire({ icon: "error", title: "Error", text: "No se pudo agregar la copia" });
       }
     }
-
     setModalOpen(false);
   };
 
@@ -341,13 +206,9 @@ export default function AdminBooks() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Gestión de Libros</h1>
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-          >
-            <FontAwesomeIcon icon={faPlus} />
-            Nuevo libro
+          <h1 className="text-3xl font-bold text-gray-800">Gestión de Copias</h1>
+          <button onClick={openCreate} className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+            <FontAwesomeIcon icon={faPlus} /> Nueva copia
           </button>
         </div>
 
@@ -359,14 +220,14 @@ export default function AdminBooks() {
             </span>
             <input
               className="w-full bg-white border rounded-lg py-2 pl-10 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              placeholder="Buscar por título, autor, ISBN, año o estado..."
+              placeholder="Buscar por título, autor, ISBN o RFID..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
         </div>
 
-        {/* Table */}
+        {/* Tabla */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
@@ -376,53 +237,34 @@ export default function AdminBooks() {
                   <th className="px-4 py-3">Título</th>
                   <th className="px-4 py-3">Autor</th>
                   <th className="px-4 py-3">ISBN</th>
-                  <th className="px-4 py-3">Año</th>
-                  <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3">RFID</th>
+                  <th className="px-4 py-3">Disponibilidad</th>
                   <th className="px-4 py-3 w-56">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filtered.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50">
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No hay resultados.</td>
+                  </tr>
+                )}
+                {filtered.map((c) => (
+                  <tr key={c.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <img
-                        src={`/Portadas_Libros/${b.ruta_img}`}
-                        alt={b.titulo}
-                        className="h-16 w-12 object-cover rounded border"
-                      />
+                      <img src={c.libro?.ruta_img} alt={c.libro?.titulo} className="h-16 w-12 object-cover rounded border" />
                     </td>
-                    <td className="px-4 py-3">{b.titulo}</td>
-                    <td className="px-4 py-3">{b.autor}</td>
-                    <td className="px-4 py-3">{b.isbn}</td>
-                    <td className="px-4 py-3">{b.anio}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          b.estado === "disponible"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {b.estado}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openEdit(b)}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500 text-white hover:bg-amber-600"
-                        >
-                          <FontAwesomeIcon icon={faPenToSquare} />
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(b)}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-700"
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                          Eliminar
-                        </button>
-                      </div>
+                    <td className="px-4 py-3">{c.libro?.titulo}</td>
+                    <td className="px-4 py-3">{c.libro?.autor}</td>
+                    <td className="px-4 py-3">{c.isbn}</td>
+                    <td className="px-4 py-3">{c.rfid_tag}</td>
+                    <td className="px-4 py-3">{c.disponibilidad ? "Disponible" : "Ocupada"}</td>
+                    <td className="px-4 py-3 flex gap-2">
+                      <button onClick={() => openEdit(c)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-amber-500 text-white hover:bg-amber-600">
+                        <FontAwesomeIcon icon={faPenToSquare} /> Editar
+                      </button>
+                      <button onClick={() => handleDelete(c)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-rose-600 text-white hover:bg-rose-700">
+                        <FontAwesomeIcon icon={faTrash} /> Eliminar
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -436,121 +278,46 @@ export default function AdminBooks() {
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
             <div className="w-full max-w-xl rounded-2xl bg-white shadow-lg">
               <div className="flex items-center justify-between px-6 py-4 border-b">
-                <h3 className="text-lg font-semibold">
-                  {editing ? "Editar libro" : "Nuevo libro"}
-                </h3>
-                <button
-                  onClick={() => setModalOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                  aria-label="Cerrar"
-                >
-                  ✕
-                </button>
+                <h3 className="text-lg font-semibold">{editing ? "Editar copia" : "Nueva copia"}</h3>
+                <button onClick={() => setModalOpen(false)} className="text-gray-500 hover:text-gray-700">✕</button>
               </div>
-
               <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-                <Field
-                  icon={faBook}
-                  label="Título"
-                  value={form.titulo}
-                  onChange={(v) => setForm((f) => ({ ...f, titulo: v }))}
-                  placeholder="Ej. Rayuela"
-                  required
-                />
-                <Field
-                  icon={faUser}
-                  label="Autor"
-                  value={form.autor}
-                  onChange={(v) => setForm((f) => ({ ...f, autor: v }))}
-                  placeholder="Ej. Julio Cortázar"
-                  required
-                />
-                <Field
-                  icon={faBarcode}
-                  label="ISBN"
-                  value={form.isbn}
-                  onChange={(v) => setForm((f) => ({ ...f, isbn: v }))}
-                  placeholder="Ej. 9780141187934"
-                  required
-                />
-                <Field
-                  icon={faCalendar}
-                  label="Año"
-                  type="number"
-                  value={form.anio}
-                  onChange={(v) => setForm((f) => ({ ...f, anio: v }))}
-                  placeholder="Ej. 1963"
-                />
-
-                <FieldImage
-                  label="Portada"
-                  value={form.imagen}
-                  onChange={(v) => setForm((f) => ({ ...f, imagen: v }))}
-                />
-
+                
+                {/* Selección de libro */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <FontAwesomeIcon icon={faTag} className="mr-2 text-gray-400" />
-                    Estado
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Libro</label>
                   <select
                     className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={form.estado}
-                    onChange={(e) => setForm((f) => ({ ...f, estado: e.target.value }))}
+                    value={form.fk_id_libro}
+                    onChange={(e) => setForm((f) => ({ ...f, fk_id_libro: e.target.value }))}
                   >
-                    <option value="disponible">disponible</option>
-                    <option value="prestado">prestado</option>
-                    <option value="mantenimiento">mantenimiento</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Departamento
-                  </label>
-                  <select
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={form.fk_id_departamento}
-                    onChange={(e) => setForm((f) => ({ ...f, fk_id_departamento: e.target.value }))}
-                  >
-                    {departamentos.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.nombre}
+                    {libros.map((lib) => (
+                      <option key={lib.id} value={lib.id}>
+                        {lib.titulo} – {lib.autor} ({new Date(lib.fecha_publicacion).getFullYear()})
                       </option>
                     ))}
                   </select>
                 </div>
 
+                <Field icon={faBook} label="ISBN" value={form.isbn} onChange={(v) => setForm((f) => ({ ...f, isbn: v }))} placeholder="978-0-321-76572-3" required />
+                <Field icon={faQrcode} label="RFID Tag" value={form.rfid_tag} onChange={(v) => setForm((f) => ({ ...f, rfid_tag: v }))} placeholder="0000000001" required />
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Género
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Disponibilidad</label>
                   <select
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    value={form.fk_id_genero}
-                    onChange={(e) => setForm((f) => ({ ...f, fk_id_genero: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2"
+                    value={form.disponibilidad}
+                    onChange={(e) => setForm((f) => ({ ...f, disponibilidad: e.target.value === "true" }))}
                   >
-                    {tiposGenero.map((gen) => (
-                      <option key={gen.id} value={gen.id}>
-                        {gen.genero}
-                      </option>
-                    ))}
+                    <option value="true">Disponible</option>
+                    <option value="false">Ocupada</option>
                   </select>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setModalOpen(false)}
-                    className="px-4 py-2 rounded-lg border hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    {editing ? "Guardar cambios" : "Agregar libro"}
+                  <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-lg border hover:bg-gray-50">Cancelar</button>
+                  <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                    {editing ? "Guardar cambios" : "Agregar copia"}
                   </button>
                 </div>
               </form>
@@ -561,4 +328,3 @@ export default function AdminBooks() {
     </div>
   );
 }
-
